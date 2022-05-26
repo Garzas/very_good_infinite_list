@@ -26,6 +26,7 @@ class InfiniteList extends StatefulWidget {
     required this.onFetchData,
     required this.itemBuilder,
     this.scrollController,
+    this.scrollDirection = Axis.vertical,
     this.physics,
     this.scrollExtentThreshold = 400.0,
     this.debounceDuration = const Duration(milliseconds: 100),
@@ -51,6 +52,12 @@ class InfiniteList extends StatefulWidget {
   /// Is optional and mostly used only for testing. If set to `null`, an
   /// internal [ScrollController] is used instead.
   final ScrollController? scrollController;
+
+  /// The axis along which the scroll view scrolls.
+  ///
+  /// Defaults to [Axis.vertical].
+  /// {@endtemplate}
+  final Axis scrollDirection;
 
   /// An optional [ScrollPhysics] this [InfiniteList] will use.
   ///
@@ -192,8 +199,7 @@ class InfiniteListState extends State<InfiniteList> {
       _initScrollController();
     }
 
-    if (widget.itemCount != oldWidget.itemCount ||
-        widget.hasReachedMax != oldWidget.hasReachedMax) {
+    if (widget.itemCount != oldWidget.itemCount || widget.hasReachedMax != oldWidget.hasReachedMax) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _attemptFetch();
       });
@@ -214,15 +220,11 @@ class InfiniteListState extends State<InfiniteList> {
     _scrollController?.removeListener(_attemptFetch);
     _scrollController?.dispose();
 
-    _scrollController = (widget.scrollController ?? ScrollController())
-      ..addListener(_attemptFetch);
+    _scrollController = (widget.scrollController ?? ScrollController())..addListener(_attemptFetch);
   }
 
   void _attemptFetch() {
-    if (_isAtEnd &&
-        !widget.hasReachedMax &&
-        !widget.isLoading &&
-        !widget.hasError) {
+    if (_isAtEnd && !widget.hasReachedMax && !widget.isLoading && !widget.hasError) {
       _debounce(widget.onFetchData);
     }
   }
@@ -261,15 +263,12 @@ class InfiniteListState extends State<InfiniteList> {
   Widget build(BuildContext context) {
     final hasItems = widget.itemCount != 0;
 
-    final showEmpty = !widget.isLoading &&
-        widget.itemCount == 0 &&
-        widget.emptyBuilder != null;
+    final showEmpty = !widget.isLoading && widget.itemCount == 0 && widget.emptyBuilder != null;
     final showBottomWidget = showEmpty || widget.isLoading || widget.hasError;
     final showSeparator = widget.separatorBuilder != null;
     final separatorCount = !showSeparator ? 0 : widget.itemCount - 1;
 
-    final itemCount = (!hasItems ? 0 : widget.itemCount + separatorCount) +
-        (showBottomWidget ? 1 : 0);
+    final itemCount = (!hasItems ? 0 : widget.itemCount + separatorCount) + (showBottomWidget ? 1 : 0);
     final lastItemIndex = itemCount - 1;
 
     return ListView.builder(
@@ -277,6 +276,7 @@ class InfiniteListState extends State<InfiniteList> {
       physics: widget.physics,
       reverse: widget.reverse,
       padding: widget.padding,
+      scrollDirection: widget.scrollDirection,
       itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == lastItemIndex && showBottomWidget) {
